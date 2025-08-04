@@ -2,7 +2,7 @@ let products = [];
 
 // Load products on page load
 window.onload = function() {
-  fetch('../products.json')
+  fetch('products.json')
     .then(response => response.json())
     .then(data => {
       products = data;
