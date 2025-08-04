@@ -23,15 +23,59 @@ function populateDatalist() {
 
 function searchItem() {
   const searchTerm = document.getElementById('search-item').value.trim().toLowerCase();
-  const item = products.find(p => p.name.toLowerCase() === searchTerm);
   
-  if (item) {
-    document.getElementById('item-name').textContent = item.name;
-    document.getElementById('current-stock').textContent = item.stock || 0;
-    document.getElementById('item-details').style.display = 'block';
-  } else {
-    alert('Item not found');
+  // If empty search term, clear the display
+  if (!searchTerm) {
+    document.getElementById('item-details').style.display = 'none';
+    return;
   }
+
+  // Find items that match (case insensitive partial match)
+  const matchedItems = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm)
+  );
+
+  // If exactly one match found, show it
+  if (matchedItems.length === 1) {
+    const item = matchedItems[0];
+    showItemDetails(item);
+  } 
+  // If multiple matches, let user select
+  else if (matchedItems.length > 1) {
+    showSearchResults(matchedItems);
+  } 
+  // No matches found
+  else {
+    document.getElementById('item-details').style.display = 'none';
+    document.getElementById('search-results').innerHTML = `
+      <div class="error">Item not found. Please check spelling.</div>
+    `;
+  }
+}
+
+function showItemDetails(item) {
+  document.getElementById('item-name').textContent = item.name;
+  document.getElementById('current-stock').textContent = item.stock || 0;
+  document.getElementById('item-details').style.display = 'block';
+  document.getElementById('search-results').innerHTML = '';
+}
+
+function showSearchResults(items) {
+  const resultsHTML = items.map(item => `
+    <div class="search-result" onclick="selectSearchResult('${item.name}')">
+      ${item.name} (Stock: ${item.stock || 0})
+    </div>
+  `).join('');
+
+  document.getElementById('search-results').innerHTML = `
+    <h3>Multiple matches found:</h3>
+    ${resultsHTML}
+  `;
+}
+
+function selectSearchResult(itemName) {
+  document.getElementById('search-item').value = itemName;
+  searchItem(); // This will now find the exact match
 }
 
 function updateStock() {
