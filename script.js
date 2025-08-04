@@ -8,15 +8,21 @@ window.onload = function() {
       products = data;
       populateDatalist();
     })
-    .catch(err => console.error('Error loading products:', err));
+    .catch(err => {
+      console.error('Error loading products:', err);
+      alert('Failed to load products. Please check console for details.');
+    });
 };
 
 function populateDatalist() {
   const datalist = document.getElementById('item-list');
   datalist.innerHTML = '';
-  products.forEach(p => {
+  
+  const uniqueNames = [...new Set(products.map(p => p.name))];
+  
+  uniqueNames.forEach(name => {
     const option = document.createElement('option');
-    option.value = p.name;
+    option.value = name;
     datalist.appendChild(option);
   });
 }
@@ -24,31 +30,26 @@ function populateDatalist() {
 function searchItem() {
   const searchTerm = document.getElementById('search-item').value.trim().toLowerCase();
   
-  // If empty search term, clear the display
   if (!searchTerm) {
     document.getElementById('item-details').style.display = 'none';
+    document.getElementById('search-results').innerHTML = '';
     return;
   }
 
-  // Find items that match (case insensitive partial match)
   const matchedItems = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm)
   );
 
-  // If exactly one match found, show it
   if (matchedItems.length === 1) {
-    const item = matchedItems[0];
-    showItemDetails(item);
+    showItemDetails(matchedItems[0]);
   } 
-  // If multiple matches, let user select
   else if (matchedItems.length > 1) {
     showSearchResults(matchedItems);
   } 
-  // No matches found
   else {
     document.getElementById('item-details').style.display = 'none';
     document.getElementById('search-results').innerHTML = `
-      <div class="error">Item not found. Please check spelling.</div>
+      <div class="error">Item not found. Please check spelling or try a different term.</div>
     `;
   }
 }
@@ -62,7 +63,7 @@ function showItemDetails(item) {
 
 function showSearchResults(items) {
   const resultsHTML = items.map(item => `
-    <div class="search-result" onclick="selectSearchResult('${item.name}')">
+    <div class="search-result" onclick="selectSearchResult('${item.name.replace(/'/g, "\\'")}')">
       ${item.name} (Stock: ${item.stock || 0})
     </div>
   `).join('');
@@ -75,7 +76,7 @@ function showSearchResults(items) {
 
 function selectSearchResult(itemName) {
   document.getElementById('search-item').value = itemName;
-  searchItem(); // This will now find the exact match
+  searchItem();
 }
 
 function updateStock() {
@@ -83,20 +84,24 @@ function updateStock() {
   const addAmount = parseInt(document.getElementById('add-stock').value) || 0;
   
   if (addAmount <= 0) {
-    alert('Please enter a valid amount');
+    alert('Please enter a valid amount (1 or more)');
     return;
   }
   
   const itemIndex = products.findIndex(p => p.name.toLowerCase() === itemName.toLowerCase());
   
   if (itemIndex !== -1) {
-    // Update in memory
     products[itemIndex].stock = (products[itemIndex].stock || 0) + addAmount;
-    
-    // Update display
     document.getElementById('current-stock').textContent = products[itemIndex].stock;
-    
-    // TODO: Save back to products.json (we'll implement this next)
     alert(`Added ${addAmount} to stock. New stock: ${products[itemIndex].stock}`);
+  } else {
+    alert('Item not found. Please search again.');
   }
 }
+
+// Add event listener for Enter key
+document.getElementById('search-item').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    searchItem();
+  }
+});
